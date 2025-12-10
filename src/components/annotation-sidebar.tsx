@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import type { Annotation } from "@/types/annotation";
 import { FONT_FAMILIES, PRESET_COLORS } from "@/types/annotation";
-import { Plus, Trash2, Download, Pipette } from "lucide-react";
+import { Plus, Trash2, Download, Pipette, Save } from "lucide-react";
 import { useRef } from "react";
 
 interface AnnotationSidebarProps {
@@ -13,8 +13,10 @@ interface AnnotationSidebarProps {
   onUpdate: (id: string, changes: Partial<Annotation>) => void;
   onDelete: (id: string) => void;
   onDownload: () => void;
+  onSave: () => void;
   onPickColor: () => void;
   isPickingColor: boolean;
+  hasUnsavedChanges: boolean;
 }
 
 const SIDEBAR_WIDTH = 220;
@@ -26,8 +28,10 @@ export function AnnotationSidebar({
   onUpdate,
   onDelete,
   onDownload,
+  onSave,
   onPickColor,
   isPickingColor,
+  hasUnsavedChanges,
 }: AnnotationSidebarProps) {
   const bgColorInputRef = useRef<HTMLInputElement>(null);
   const textColorInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +46,29 @@ export function AnnotationSidebar({
         <p className="text-xs text-muted-foreground mt-1">
           Double-click on page to add
         </p>
+      </div>
+
+      {/* Save & Download buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant={hasUnsavedChanges ? "default" : "outline"}
+          size="sm"
+          className="flex-1 justify-center gap-1"
+          onClick={onSave}
+        >
+          <Save className="h-4 w-4" />
+          Save
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 justify-center gap-1"
+          onClick={onDownload}
+          disabled={annotations.length === 0}
+        >
+          <Download className="h-4 w-4" />
+          Download
+        </Button>
       </div>
 
       {/* Add button */}
@@ -318,21 +345,6 @@ export function AnnotationSidebar({
           >
             <Trash2 className="h-4 w-4" />
             Delete
-          </Button>
-        </div>
-      )}
-
-      {/* Download button */}
-      {annotations.length > 0 && (
-        <div className="mt-auto border-t pt-3">
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full justify-start gap-2"
-            onClick={onDownload}
-          >
-            <Download className="h-4 w-4" />
-            Download PDF
           </Button>
         </div>
       )}

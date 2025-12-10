@@ -35,6 +35,35 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [currentPage] = useState(1);
   const [isPickingColor, setIsPickingColor] = useState(false);
+  const [savedAnnotations, setSavedAnnotations] = useState<string>("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Generate storage key based on URL
+  const storageKey = `pdf-annotations-${url}`;
+
+  // Load saved annotations on mount or URL change
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setAnnotations(parsed);
+        setSavedAnnotations(saved);
+      } catch {
+        // Invalid JSON, ignore
+      }
+    } else {
+      setAnnotations([]);
+      setSavedAnnotations("");
+    }
+    setHasUnsavedChanges(false);
+  }, [storageKey]);
+
+  // Track unsaved changes
+  useEffect(() => {
+    const currentJson = JSON.stringify(annotations);
+    setHasUnsavedChanges(currentJson !== savedAnnotations);
+  }, [annotations, savedAnnotations]);
 
   useEffect(() => {
     function handleResize() {
@@ -224,6 +253,13 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     setIsPickingColor(false);
   }
 
+  function handleSave() {
+    const json = JSON.stringify(annotations);
+    localStorage.setItem(storageKey, json);
+    setSavedAnnotations(json);
+    setHasUnsavedChanges(false);
+  }
+
   const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) || null;
 
   const pageWidth = containerWidth * zoom;
@@ -349,8 +385,10 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
           onUpdate={handleUpdateAnnotation}
           onDelete={handleDeleteAnnotation}
           onDownload={handleDownload}
+          onSave={handleSave}
           onPickColor={handlePickColor}
           isPickingColor={isPickingColor}
+          hasUnsavedChanges={hasUnsavedChanges}
         />
       )}
     </div>
