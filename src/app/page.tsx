@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Edit } from "lucide-react";
 
 const PDFViewer = dynamic(
   () => import("@/components/pdf-viewer").then((mod) => mod.PDFViewer),
@@ -20,6 +20,7 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [editingEnabled, setEditingEnabled] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -67,6 +68,16 @@ export default function Home() {
             className="flex-1"
           />
           <Button type="submit">View PDF</Button>
+          {pdfUrl && (
+            <Button
+              type="button"
+              variant={editingEnabled ? "default" : "outline"}
+              onClick={() => setEditingEnabled(!editingEnabled)}
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              {editingEnabled ? "Editing" : "Edit"}
+            </Button>
+          )}
         </form>
 
         {history.length > 0 && !pdfUrl && (
@@ -101,7 +112,7 @@ export default function Home() {
 
       {pdfUrl && (
         <div className="flex-1 overflow-hidden">
-          <PDFViewer url={pdfUrl} />
+          <PDFViewer url={pdfUrl} editingEnabled={editingEnabled} />
         </div>
       )}
     </div>
