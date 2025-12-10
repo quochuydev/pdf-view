@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import type { Annotation } from "@/types/annotation";
 import { FONT_FAMILIES, PRESET_COLORS } from "@/types/annotation";
-import { Plus, Trash2, Download, Pipette, Save } from "lucide-react";
+import { Plus, Trash2, Download, Pipette, Save, Loader2 } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 
 const CUSTOM_FONTS_STORAGE_KEY = "pdf-viewer-custom-fonts";
@@ -19,6 +19,7 @@ interface AnnotationSidebarProps {
   onPickColor: () => void;
   isPickingColor: boolean;
   hasUnsavedChanges: boolean;
+  isSaving: boolean;
 }
 
 const SIDEBAR_WIDTH = 220;
@@ -71,6 +72,7 @@ export function AnnotationSidebar({
   onPickColor,
   isPickingColor,
   hasUnsavedChanges,
+  isSaving,
 }: AnnotationSidebarProps) {
   const bgColorInputRef = useRef<HTMLInputElement>(null);
   const textColorInputRef = useRef<HTMLInputElement>(null);
@@ -145,9 +147,14 @@ export function AnnotationSidebar({
           size="sm"
           className="flex-1 justify-center gap-1"
           onClick={onSave}
+          disabled={isSaving}
         >
-          <Save className="h-4 w-4" />
-          Save
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {isSaving ? "Saving..." : "Save"}
         </Button>
         <Button
           variant="outline"

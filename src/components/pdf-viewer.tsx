@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
@@ -37,6 +37,9 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [savedAnnotations, setSavedAnnotations] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [history, setHistory] = useState<Annotation[][]>([]);
+  const isUndoing = useRef(false);
 
   // Generate storage key based on URL
   const storageKey = `pdf-annotations-${url}`;
@@ -59,11 +62,63 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     setHasUnsavedChanges(false);
   }, [storageKey]);
 
-  // Track unsaved changes
+  // Track unsaved changes and history for undo
   useEffect(() => {
     const currentJson = JSON.stringify(annotations);
     setHasUnsavedChanges(currentJson !== savedAnnotations);
+
+    // Add to history for undo (skip if we're undoing)
+    if (!isUndoing.current) {
+      setHistory((prev) => {
+        const newHistory = [...prev, annotations];
+        // Keep last 50 states
+        return newHistory.slice(-50);
+      });
+    }
+    isUndoing.current = false;
   }, [annotations, savedAnnotations]);
+
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    // Small delay to show the saving indicator
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const json = JSON.stringify(annotations);
+    localStorage.setItem(storageKey, json);
+    setSavedAnnotations(json);
+    setHasUnsavedChanges(false);
+    setIsSaving(false);
+  }, [annotations, storageKey]);
+
+  // Auto-save every 5 seconds if there are unsaved changes
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || !editingEnabled) return;
+
+    const timer = setTimeout(() => {
+      handleSaveRef.current();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [hasUnsavedChanges, editingEnabled]);
+
+  // Undo with Ctrl/Cmd+Z
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (history.length > 1) {
+          isUndoing.current = true;
+          const newHistory = history.slice(0, -1);
+          setHistory(newHistory);
+          setAnnotations(newHistory[newHistory.length - 1] || []);
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [history]);
 
   useEffect(() => {
     function handleResize() {
@@ -253,13 +308,6 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     setIsPickingColor(false);
   }
 
-  function handleSave() {
-    const json = JSON.stringify(annotations);
-    localStorage.setItem(storageKey, json);
-    setSavedAnnotations(json);
-    setHasUnsavedChanges(false);
-  }
-
   const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) || null;
 
   const pageWidth = containerWidth * zoom;
@@ -389,6 +437,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
           onPickColor={handlePickColor}
           isPickingColor={isPickingColor}
           hasUnsavedChanges={hasUnsavedChanges}
+          isSaving={isSaving}
         />
       )}
     </div>
