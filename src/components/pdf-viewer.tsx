@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import { jsPDF } from "jspdf";
 import { PDFAnnotationLayer } from "./pdf-annotation-layer";
 import { AnnotationSidebar } from "./annotation-sidebar";
 import type { Annotation } from "@/types/annotation";
@@ -114,8 +115,77 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   }
 
   async function handleDownload() {
-    // Will implement in Task 7
-    console.log("Download not yet implemented");
+    if (!numPages || !containerRef.current) return;
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "px",
+    });
+
+    const pageElements = containerRef.current.querySelectorAll(".react-pdf__Page");
+
+    for (let i = 0; i < pageElements.length; i++) {
+      const pageElement = pageElements[i] as HTMLElement;
+      const canvas = pageElement.querySelector("canvas");
+
+      if (!canvas) continue;
+
+      // Create a new canvas to draw both PDF and annotations
+      const combinedCanvas = document.createElement("canvas");
+      const ctx = combinedCanvas.getContext("2d");
+      if (!ctx) continue;
+
+      combinedCanvas.width = canvas.width;
+      combinedCanvas.height = canvas.height;
+
+      // Draw the PDF page
+      ctx.drawImage(canvas, 0, 0);
+
+      // Draw annotations for this page
+      const pageAnnotations = annotations.filter((a) => a.pageNumber === i + 1);
+      const scaleX = canvas.width / pageElement.clientWidth;
+
+      for (const annotation of pageAnnotations) {
+        const x = (annotation.x / 100) * canvas.width;
+        const y = (annotation.y / 100) * canvas.height;
+        const width = (annotation.width / 100) * canvas.width;
+
+        ctx.font = `${annotation.fontWeight} ${annotation.fontSize * scaleX}px ${annotation.fontFamily}`;
+        ctx.fillStyle = "black";
+        ctx.textBaseline = "top";
+
+        // Simple text wrapping
+        const words = annotation.text.split(" ");
+        let line = "";
+        let lineY = y;
+        const lineHeight = annotation.fontSize * scaleX * 1.2;
+
+        for (const word of words) {
+          const testLine = line + word + " ";
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > width && line !== "") {
+            ctx.fillText(line, x, lineY);
+            line = word + " ";
+            lineY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, x, lineY);
+      }
+
+      // Add page to PDF
+      const imgData = combinedCanvas.toDataURL("image/png");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (combinedCanvas.height / combinedCanvas.width) * pdfWidth;
+
+      if (i > 0) {
+        pdf.addPage();
+      }
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    }
+
+    pdf.save("annotated.pdf");
   }
 
   const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) || null;
