@@ -6,24 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Minus, Plus } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import { PDFAnnotationLayer } from "./pdf-annotation-layer";
+import { AnnotationSidebar } from "./annotation-sidebar";
+import type { Annotation } from "@/types/annotation";
+import { DEFAULT_ANNOTATION } from "@/types/annotation";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PDFViewerProps {
   url: string;
+  editingEnabled?: boolean;
 }
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const SIDEBAR_WIDTH = 160;
 const THUMBNAIL_WIDTH = 120;
 
-export function PDFViewer({ url }: PDFViewerProps) {
+export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(0.75);
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     function handleResize() {
@@ -66,6 +75,50 @@ export function PDFViewer({ url }: PDFViewerProps) {
       pageElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
+
+  function generateId() {
+    return Math.random().toString(36).substring(2, 9);
+  }
+
+  function handleAddAnnotation(pageNumber: number, x: number, y: number) {
+    const newAnnotation: Annotation = {
+      ...DEFAULT_ANNOTATION,
+      id: generateId(),
+      pageNumber,
+      x,
+      y,
+    };
+    setAnnotations((prev) => [...prev, newAnnotation]);
+    setSelectedAnnotationId(newAnnotation.id);
+  }
+
+  function handleAddAtCenter() {
+    handleAddAnnotation(currentPage, 40, 40);
+  }
+
+  function handleUpdateAnnotation(id: string, changes: Partial<Annotation>) {
+    setAnnotations((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, ...changes } : a))
+    );
+  }
+
+  function handleDeleteAnnotation(id: string) {
+    setAnnotations((prev) => prev.filter((a) => a.id !== id));
+    if (selectedAnnotationId === id) {
+      setSelectedAnnotationId(null);
+    }
+  }
+
+  function handleSelectAnnotation(id: string | null) {
+    setSelectedAnnotationId(id);
+  }
+
+  async function handleDownload() {
+    // Will implement in Task 7
+    console.log("Download not yet implemented");
+  }
+
+  const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) || null;
 
   const pageWidth = containerWidth * zoom;
 
@@ -147,6 +200,7 @@ export function PDFViewer({ url }: PDFViewerProps) {
                     ref={(el) => {
                       if (el) pageRefs.current.set(index + 1, el);
                     }}
+                    className="relative"
                   >
                     <Page
                       pageNumber={index + 1}
@@ -155,6 +209,17 @@ export function PDFViewer({ url }: PDFViewerProps) {
                       renderTextLayer={true}
                       renderAnnotationLayer={true}
                     />
+                    {editingEnabled && (
+                      <PDFAnnotationLayer
+                        pageNumber={index + 1}
+                        annotations={annotations}
+                        selectedAnnotationId={selectedAnnotationId}
+                        onAdd={handleAddAnnotation}
+                        onUpdate={handleUpdateAnnotation}
+                        onDelete={handleDeleteAnnotation}
+                        onSelect={handleSelectAnnotation}
+                      />
+                    )}
                   </div>
                 ))}
             </Document>
@@ -166,6 +231,17 @@ export function PDFViewer({ url }: PDFViewerProps) {
           </div>
         </div>
       </div>
+
+      {editingEnabled && (
+        <AnnotationSidebar
+          annotations={annotations}
+          selectedAnnotation={selectedAnnotation}
+          onAddAtCenter={handleAddAtCenter}
+          onUpdate={handleUpdateAnnotation}
+          onDelete={handleDeleteAnnotation}
+          onDownload={handleDownload}
+        />
+      )}
     </div>
   );
 }
