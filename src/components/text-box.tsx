@@ -41,14 +41,45 @@ export function TextBox({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (isSelected && !isEditing && (e.key === "Delete" || e.key === "Backspace")) {
+      if (!isSelected || isEditing) return;
+
+      if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         onDelete();
+        return;
       }
+
+      // Arrow key movement (like CapCut: normal = slow, shift = fast)
+      const moveStep = e.shiftKey ? 1 : 0.1;
+      let newX = annotation.x;
+      let newY = annotation.y;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          newY = Math.max(0, annotation.y - moveStep);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          newY = Math.min(95, annotation.y + moveStep);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          newX = Math.max(0, annotation.x - moveStep);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          newX = Math.min(100 - annotation.width, annotation.x + moveStep);
+          break;
+        default:
+          return;
+      }
+
+      onUpdate({ x: newX, y: newY });
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSelected, isEditing, onDelete]);
+  }, [isSelected, isEditing, onDelete, annotation.x, annotation.y, annotation.width, onUpdate]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
