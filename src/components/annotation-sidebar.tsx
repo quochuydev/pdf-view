@@ -2,8 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import type { Annotation } from "@/types/annotation";
-import { FONT_FAMILIES, FONT_SIZES } from "@/types/annotation";
-import { Plus, Trash2, Download } from "lucide-react";
+import { FONT_FAMILIES, FONT_SIZES, PRESET_COLORS } from "@/types/annotation";
+import { Plus, Trash2, Download, Pipette } from "lucide-react";
+import { useRef } from "react";
 
 interface AnnotationSidebarProps {
   annotations: Annotation[];
@@ -12,6 +13,8 @@ interface AnnotationSidebarProps {
   onUpdate: (id: string, changes: Partial<Annotation>) => void;
   onDelete: (id: string) => void;
   onDownload: () => void;
+  onPickColor: () => void;
+  isPickingColor: boolean;
 }
 
 const SIDEBAR_WIDTH = 220;
@@ -23,7 +26,11 @@ export function AnnotationSidebar({
   onUpdate,
   onDelete,
   onDownload,
+  onPickColor,
+  isPickingColor,
 }: AnnotationSidebarProps) {
+  const bgColorInputRef = useRef<HTMLInputElement>(null);
+  const textColorInputRef = useRef<HTMLInputElement>(null);
   return (
     <div
       className="flex-shrink-0 border-l bg-muted/30 overflow-y-auto p-3 flex flex-col gap-4"
@@ -135,6 +142,83 @@ export function AnnotationSidebar({
               }
               className="w-full mt-1"
             />
+          </div>
+
+          {/* Background Color */}
+          <div>
+            <label className="text-xs text-muted-foreground">Background Color</label>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {PRESET_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  title={color.label}
+                  onClick={() =>
+                    onUpdate(selectedAnnotation.id, { backgroundColor: color.value })
+                  }
+                  className={`w-6 h-6 rounded border-2 ${
+                    selectedAnnotation.backgroundColor === color.value
+                      ? "border-primary"
+                      : "border-gray-300"
+                  }`}
+                  style={{
+                    backgroundColor: color.value === "transparent" ? undefined : color.value,
+                    backgroundImage:
+                      color.value === "transparent"
+                        ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)"
+                        : undefined,
+                    backgroundSize: "8px 8px",
+                    backgroundPosition: "0 0, 0 4px, 4px -4px, -4px 0px",
+                  }}
+                />
+              ))}
+              {/* Custom color picker */}
+              <button
+                title="Custom color"
+                onClick={() => bgColorInputRef.current?.click()}
+                className="w-6 h-6 rounded border-2 border-gray-300 bg-gradient-to-br from-red-500 via-green-500 to-blue-500"
+              />
+              <input
+                ref={bgColorInputRef}
+                type="color"
+                value={selectedAnnotation.backgroundColor === "transparent" ? "#ffffff" : selectedAnnotation.backgroundColor}
+                onChange={(e) =>
+                  onUpdate(selectedAnnotation.id, { backgroundColor: e.target.value })
+                }
+                className="sr-only"
+              />
+            </div>
+            {/* Eyedropper / Pick from PDF */}
+            <Button
+              variant={isPickingColor ? "default" : "outline"}
+              size="sm"
+              className="w-full mt-2 justify-start gap-2"
+              onClick={onPickColor}
+            >
+              <Pipette className="h-4 w-4" />
+              {isPickingColor ? "Click on PDF to pick..." : "Pick from PDF"}
+            </Button>
+          </div>
+
+          {/* Text Color */}
+          <div>
+            <label className="text-xs text-muted-foreground">Text Color</label>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                onClick={() => textColorInputRef.current?.click()}
+                className="w-8 h-8 rounded border-2 border-gray-300"
+                style={{ backgroundColor: selectedAnnotation.textColor }}
+              />
+              <input
+                ref={textColorInputRef}
+                type="color"
+                value={selectedAnnotation.textColor}
+                onChange={(e) =>
+                  onUpdate(selectedAnnotation.id, { textColor: e.target.value })
+                }
+                className="sr-only"
+              />
+              <span className="text-xs text-muted-foreground">{selectedAnnotation.textColor}</span>
+            </div>
           </div>
 
           {/* Delete button */}

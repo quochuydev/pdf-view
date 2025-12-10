@@ -8,6 +8,8 @@ export interface Annotation {
   fontFamily: string;
   fontSize: number;
   fontWeight: "normal" | "bold";
+  backgroundColor: string; // hex color or 'transparent'
+  textColor: string; // hex color
 }
 
 export const FONT_FAMILIES = [
@@ -21,10 +23,22 @@ export const FONT_FAMILIES = [
 
 export const FONT_SIZES = [8, 10, 12, 14, 16, 18, 24, 32, 48] as const;
 
+export const PRESET_COLORS = [
+  { label: "White", value: "#ffffff" },
+  { label: "Light Gray", value: "#f0f0f0" },
+  { label: "Yellow", value: "#fff3cd" },
+  { label: "Green", value: "#d4edda" },
+  { label: "Blue", value: "#cce5ff" },
+  { label: "Pink", value: "#f8d7da" },
+  { label: "Transparent", value: "transparent" },
+] as const;
+
 export const DEFAULT_ANNOTATION: Omit<Annotation, "id" | "pageNumber" | "x" | "y"> = {
   width: 20,
   text: "",
   fontFamily: "Arial",
   fontSize: 14,
   fontWeight: "normal",
+  backgroundColor: "#ffffff",
+  textColor: "#000000",
 };

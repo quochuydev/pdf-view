@@ -148,11 +148,13 @@ export function TextBox({
           value={annotation.text}
           onChange={handleTextChange}
           onBlur={handleBlur}
-          className="w-full min-h-[24px] bg-white/90 border border-primary resize-none outline-none p-1"
+          className="w-full min-h-[24px] border border-primary resize-none outline-none p-1"
           style={{
             fontFamily: annotation.fontFamily,
             fontSize: annotation.fontSize,
             fontWeight: annotation.fontWeight,
+            backgroundColor: annotation.backgroundColor === "transparent" ? "rgba(255,255,255,0.9)" : annotation.backgroundColor,
+            color: annotation.textColor,
           }}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
@@ -161,12 +163,14 @@ export function TextBox({
         <div
           className={cn(
             "w-full min-h-[24px] p-1 whitespace-pre-wrap break-words",
-            !annotation.text && "bg-white/50 border border-dashed border-gray-400"
+            !annotation.text && annotation.backgroundColor === "transparent" && "border border-dashed border-gray-400"
           )}
           style={{
             fontFamily: annotation.fontFamily,
             fontSize: annotation.fontSize,
             fontWeight: annotation.fontWeight,
+            backgroundColor: annotation.backgroundColor,
+            color: annotation.textColor,
           }}
         >
           {annotation.text || "Double-click to edit"}

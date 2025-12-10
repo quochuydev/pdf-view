@@ -12,6 +12,8 @@ interface PDFAnnotationLayerProps {
   onUpdate: (id: string, changes: Partial<Annotation>) => void;
   onDelete: (id: string) => void;
   onSelect: (id: string | null) => void;
+  isPickingColor?: boolean;
+  onColorPicked?: (color: string) => void;
 }
 
 export function PDFAnnotationLayer({
@@ -22,6 +24,8 @@ export function PDFAnnotationLayer({
   onUpdate,
   onDelete,
   onSelect,
+  isPickingColor,
+  onColorPicked,
 }: PDFAnnotationLayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -54,6 +58,24 @@ export function PDFAnnotationLayer({
   }
 
   function handleContainerClick(e: React.MouseEvent) {
+    // If picking color, get color from the PDF canvas
+    if (isPickingColor && onColorPicked) {
+      const parent = containerRef.current?.parentElement;
+      const canvas = parent?.querySelector("canvas");
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          const hex = `#${pixel[0].toString(16).padStart(2, "0")}${pixel[1].toString(16).padStart(2, "0")}${pixel[2].toString(16).padStart(2, "0")}`;
+          onColorPicked(hex);
+          return;
+        }
+      }
+    }
+
     if (e.target === containerRef.current) {
       onSelect(null);
     }
@@ -64,9 +86,9 @@ export function PDFAnnotationLayer({
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 cursor-crosshair z-10"
+      className={`absolute inset-0 z-10 ${isPickingColor ? "cursor-crosshair" : "cursor-crosshair"}`}
       onClick={handleContainerClick}
-      onDoubleClick={handleClick}
+      onDoubleClick={isPickingColor ? undefined : handleClick}
     >
       {pageAnnotations.map((annotation) => (
         <TextBox

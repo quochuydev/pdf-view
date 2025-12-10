@@ -34,6 +34,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [currentPage] = useState(1);
+  const [isPickingColor, setIsPickingColor] = useState(false);
 
   useEffect(() => {
     function handleResize() {
@@ -149,29 +150,53 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
         const x = (annotation.x / 100) * canvas.width;
         const y = (annotation.y / 100) * canvas.height;
         const width = (annotation.width / 100) * canvas.width;
+        const padding = 4 * scaleX;
+
+        // Draw background
+        if (annotation.backgroundColor && annotation.backgroundColor !== "transparent") {
+          ctx.fillStyle = annotation.backgroundColor;
+          // Calculate text height for background
+          ctx.font = `${annotation.fontWeight} ${annotation.fontSize * scaleX}px ${annotation.fontFamily}`;
+          const words = annotation.text.split(" ");
+          let line = "";
+          let lines = 0;
+          for (const word of words) {
+            const testLine = line + word + " ";
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > width - padding * 2 && line !== "") {
+              lines++;
+              line = word + " ";
+            } else {
+              line = testLine;
+            }
+          }
+          if (line) lines++;
+          const textHeight = lines * annotation.fontSize * scaleX * 1.2;
+          ctx.fillRect(x, y, width, textHeight + padding * 2);
+        }
 
         ctx.font = `${annotation.fontWeight} ${annotation.fontSize * scaleX}px ${annotation.fontFamily}`;
-        ctx.fillStyle = "black";
+        ctx.fillStyle = annotation.textColor || "black";
         ctx.textBaseline = "top";
 
         // Simple text wrapping
         const words = annotation.text.split(" ");
         let line = "";
-        let lineY = y;
+        let lineY = y + padding;
         const lineHeight = annotation.fontSize * scaleX * 1.2;
 
         for (const word of words) {
           const testLine = line + word + " ";
           const metrics = ctx.measureText(testLine);
-          if (metrics.width > width && line !== "") {
-            ctx.fillText(line, x, lineY);
+          if (metrics.width > width - padding * 2 && line !== "") {
+            ctx.fillText(line, x + padding, lineY);
             line = word + " ";
             lineY += lineHeight;
           } else {
             line = testLine;
           }
         }
-        ctx.fillText(line, x, lineY);
+        ctx.fillText(line, x + padding, lineY);
       }
 
       // Add page to PDF
@@ -186,6 +211,17 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     }
 
     pdf.save("annotated.pdf");
+  }
+
+  function handlePickColor() {
+    setIsPickingColor(!isPickingColor);
+  }
+
+  function handleColorPicked(color: string) {
+    if (selectedAnnotationId) {
+      handleUpdateAnnotation(selectedAnnotationId, { backgroundColor: color });
+    }
+    setIsPickingColor(false);
   }
 
   const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) || null;
@@ -288,6 +324,8 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
                           onUpdate={handleUpdateAnnotation}
                           onDelete={handleDeleteAnnotation}
                           onSelect={handleSelectAnnotation}
+                          isPickingColor={isPickingColor}
+                          onColorPicked={handleColorPicked}
                         />
                       )}
                     </div>
@@ -311,6 +349,8 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
           onUpdate={handleUpdateAnnotation}
           onDelete={handleDeleteAnnotation}
           onDownload={handleDownload}
+          onPickColor={handlePickColor}
+          isPickingColor={isPickingColor}
         />
       )}
     </div>
