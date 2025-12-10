@@ -64,7 +64,7 @@ export function PDFAnnotationLayer({
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 cursor-crosshair"
+      className="absolute inset-0 cursor-crosshair z-10"
       onClick={handleContainerClick}
       onDoubleClick={handleClick}
     >

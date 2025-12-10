@@ -270,26 +270,27 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
                     ref={(el) => {
                       if (el) pageRefs.current.set(index + 1, el);
                     }}
-                    className="relative"
+                    className="mb-4"
                   >
-                    <Page
-                      pageNumber={index + 1}
-                      className="mb-4 shadow-lg"
-                      width={pageWidth}
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                    />
-                    {editingEnabled && (
-                      <PDFAnnotationLayer
+                    <div className="relative shadow-lg">
+                      <Page
                         pageNumber={index + 1}
-                        annotations={annotations}
-                        selectedAnnotationId={selectedAnnotationId}
-                        onAdd={handleAddAnnotation}
-                        onUpdate={handleUpdateAnnotation}
-                        onDelete={handleDeleteAnnotation}
-                        onSelect={handleSelectAnnotation}
+                        width={pageWidth}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
                       />
-                    )}
+                      {editingEnabled && (
+                        <PDFAnnotationLayer
+                          pageNumber={index + 1}
+                          annotations={annotations}
+                          selectedAnnotationId={selectedAnnotationId}
+                          onAdd={handleAddAnnotation}
+                          onUpdate={handleUpdateAnnotation}
+                          onDelete={handleDeleteAnnotation}
+                          onSelect={handleSelectAnnotation}
+                        />
+                      )}
+                    </div>
                   </div>
                 ))}
             </Document>

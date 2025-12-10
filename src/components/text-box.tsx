@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { Annotation } from "@/types/annotation";
 import { cn } from "@/lib/utils";
 
@@ -26,9 +26,8 @@ export function TextBox({
   const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dragStartRef = useRef({ x: 0, y: 0, annotationX: 0, annotationY: 0, annotationWidth: 0 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
 
   const pixelX = (annotation.x / 100) * containerWidth;
   const pixelY = (annotation.y / 100) * containerHeight;
@@ -51,42 +50,66 @@ export function TextBox({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isSelected, isEditing, onDelete]);
 
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isDragging) {
+      const deltaX = e.clientX - dragStartRef.current.x;
+      const deltaY = e.clientY - dragStartRef.current.y;
+      const newX = dragStartRef.current.annotationX + (deltaX / containerWidth) * 100;
+      const newY = dragStartRef.current.annotationY + (deltaY / containerHeight) * 100;
+      onUpdate({
+        x: Math.max(0, Math.min(100 - annotation.width, newX)),
+        y: Math.max(0, Math.min(95, newY)),
+      });
+    } else if (isResizing) {
+      const deltaX = e.clientX - dragStartRef.current.x;
+      const newWidth = dragStartRef.current.annotationWidth + (deltaX / containerWidth) * 100;
+      onUpdate({ width: Math.max(10, Math.min(100 - annotation.x, newWidth)) });
+    }
+  }, [isDragging, isResizing, containerWidth, containerHeight, annotation.width, annotation.x, onUpdate]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging || isResizing) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+
   function handleMouseDown(e: React.MouseEvent) {
     if (isEditing) return;
     e.stopPropagation();
+    e.preventDefault();
     onSelect();
     setIsDragging(true);
-    setDragStart({ x: e.clientX - pixelX, y: e.clientY - pixelY });
-  }
-
-  function handleMouseMove(e: React.MouseEvent) {
-    if (!isDragging) return;
-    const newX = ((e.clientX - dragStart.x) / containerWidth) * 100;
-    const newY = ((e.clientY - dragStart.y) / containerHeight) * 100;
-    onUpdate({
-      x: Math.max(0, Math.min(100 - annotation.width, newX)),
-      y: Math.max(0, Math.min(95, newY)),
-    });
-  }
-
-  function handleMouseUp() {
-    setIsDragging(false);
-    setIsResizing(false);
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      annotationX: annotation.x,
+      annotationY: annotation.y,
+      annotationWidth: annotation.width,
+    };
   }
 
   function handleResizeMouseDown(e: React.MouseEvent) {
     e.stopPropagation();
+    e.preventDefault();
     onSelect();
     setIsResizing(true);
-    setDragStart({ x: e.clientX, y: 0 });
-  }
-
-  function handleResizeMouseMove(e: React.MouseEvent) {
-    if (!isResizing) return;
-    const deltaX = e.clientX - dragStart.x;
-    const newWidth = annotation.width + (deltaX / containerWidth) * 100;
-    onUpdate({ width: Math.max(10, Math.min(100 - annotation.x, newWidth)) });
-    setDragStart({ x: e.clientX, y: 0 });
+    dragStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      annotationX: annotation.x,
+      annotationY: annotation.y,
+      annotationWidth: annotation.width,
+    };
   }
 
   function handleDoubleClick(e: React.MouseEvent) {
@@ -104,9 +127,8 @@ export function TextBox({
 
   return (
     <div
-      ref={boxRef}
       className={cn(
-        "absolute cursor-move",
+        "absolute cursor-move select-none",
         isSelected && "ring-2 ring-primary",
         isDragging && "opacity-80"
       )}
@@ -115,11 +137,9 @@ export function TextBox({
         top: pixelY,
         width: pixelWidth,
         minHeight: 24,
+        zIndex: isSelected ? 10 : 1,
       }}
       onMouseDown={handleMouseDown}
-      onMouseMove={isDragging ? handleMouseMove : isResizing ? handleResizeMouseMove : undefined}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
       onDoubleClick={handleDoubleClick}
     >
       {isEditing ? (
@@ -134,6 +154,8 @@ export function TextBox({
             fontSize: annotation.fontSize,
             fontWeight: annotation.fontWeight,
           }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
         />
       ) : (
         <div
