@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { X, Edit } from "lucide-react";
+import { X, Edit, Upload } from "lucide-react";
 
 const PDFViewer = dynamic(
   () => import("@/components/pdf-viewer").then((mod) => mod.PDFViewer),
@@ -19,6 +19,7 @@ const STORAGE_KEY = "pdf-viewer-urls";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfFileName, setPdfFileName] = useState<string | null>(null);
   const [history, setHistory] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -29,6 +30,19 @@ export default function Home() {
     return [];
   });
   const [editingEnabled, setEditingEnabled] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      const objectUrl = URL.createObjectURL(file);
+      setPdfUrl(objectUrl);
+      setPdfFileName(file.name);
+      setUrl("");
+    }
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  }
 
   function saveToHistory(newUrl: string) {
     const updated = [newUrl, ...history.filter((u) => u !== newUrl)].slice(0, 10);
@@ -47,6 +61,7 @@ export default function Home() {
     if (url.trim()) {
       const trimmed = url.trim();
       setPdfUrl(trimmed);
+      setPdfFileName(null);
       saveToHistory(trimmed);
     }
   }
@@ -54,6 +69,7 @@ export default function Home() {
   function handleSelectHistory(selectedUrl: string) {
     setUrl(selectedUrl);
     setPdfUrl(selectedUrl);
+    setPdfFileName(null);
     saveToHistory(selectedUrl);
   }
 
@@ -69,6 +85,20 @@ export default function Home() {
             className="flex-1"
           />
           <Button type="submit">View PDF</Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
           {pdfUrl && (
             <Button
               type="button"
@@ -80,6 +110,11 @@ export default function Home() {
             </Button>
           )}
         </form>
+        {pdfFileName && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            {pdfFileName}
+          </p>
+        )}
 
         {history.length > 0 && !pdfUrl && (
           <div className="max-w-2xl mx-auto mt-4">
