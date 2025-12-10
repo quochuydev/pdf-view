@@ -187,6 +187,39 @@ export function AnnotationSidebar({
                 className="sr-only"
               />
             </div>
+            {/* Hex input for background */}
+            <div className="flex items-center gap-2 mt-2">
+              <div
+                className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                style={{
+                  backgroundColor: selectedAnnotation.backgroundColor === "transparent" ? undefined : selectedAnnotation.backgroundColor,
+                  backgroundImage:
+                    selectedAnnotation.backgroundColor === "transparent"
+                      ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)"
+                      : undefined,
+                  backgroundSize: "8px 8px",
+                  backgroundPosition: "0 0, 0 4px, 4px -4px, -4px 0px",
+                }}
+              />
+              <input
+                type="text"
+                value={selectedAnnotation.backgroundColor}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "transparent" || /^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                    onUpdate(selectedAnnotation.id, { backgroundColor: val });
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = e.target.value;
+                  if (val !== "transparent" && !/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    onUpdate(selectedAnnotation.id, { backgroundColor: "#ffffff" });
+                  }
+                }}
+                className="flex-1 h-7 rounded-md border bg-background px-2 text-xs font-mono"
+                placeholder="#ffffff"
+              />
+            </div>
             {/* Eyedropper / Pick from PDF */}
             <Button
               variant={isPickingColor ? "default" : "outline"}
@@ -202,11 +235,36 @@ export function AnnotationSidebar({
           {/* Text Color */}
           <div>
             <label className="text-xs text-muted-foreground">Text Color</label>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-wrap gap-1 mt-1">
+              {/* Common text colors */}
+              {[
+                { label: "Black", value: "#000000" },
+                { label: "Dark Gray", value: "#333333" },
+                { label: "Gray", value: "#666666" },
+                { label: "Red", value: "#dc2626" },
+                { label: "Blue", value: "#2563eb" },
+                { label: "Green", value: "#16a34a" },
+                { label: "White", value: "#ffffff" },
+              ].map((color) => (
+                <button
+                  key={color.value}
+                  title={color.label}
+                  onClick={() =>
+                    onUpdate(selectedAnnotation.id, { textColor: color.value })
+                  }
+                  className={`w-6 h-6 rounded border-2 ${
+                    selectedAnnotation.textColor === color.value
+                      ? "border-primary"
+                      : "border-gray-300"
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                />
+              ))}
+              {/* Custom color picker */}
               <button
+                title="Custom color"
                 onClick={() => textColorInputRef.current?.click()}
-                className="w-8 h-8 rounded border-2 border-gray-300"
-                style={{ backgroundColor: selectedAnnotation.textColor }}
+                className="w-6 h-6 rounded border-2 border-gray-300 bg-gradient-to-br from-red-500 via-green-500 to-blue-500"
               />
               <input
                 ref={textColorInputRef}
@@ -217,7 +275,31 @@ export function AnnotationSidebar({
                 }
                 className="sr-only"
               />
-              <span className="text-xs text-muted-foreground">{selectedAnnotation.textColor}</span>
+            </div>
+            {/* Hex input for text color */}
+            <div className="flex items-center gap-2 mt-2">
+              <div
+                className="w-6 h-6 rounded border border-gray-300 flex-shrink-0"
+                style={{ backgroundColor: selectedAnnotation.textColor }}
+              />
+              <input
+                type="text"
+                value={selectedAnnotation.textColor}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                    onUpdate(selectedAnnotation.id, { textColor: val });
+                  }
+                }}
+                onBlur={(e) => {
+                  const val = e.target.value;
+                  if (!/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    onUpdate(selectedAnnotation.id, { textColor: "#000000" });
+                  }
+                }}
+                className="flex-1 h-7 rounded-md border bg-background px-2 text-xs font-mono"
+                placeholder="#000000"
+              />
             </div>
           </div>
 
