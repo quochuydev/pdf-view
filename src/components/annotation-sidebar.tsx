@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import type { Annotation } from "@/types/annotation";
-import { FONT_FAMILIES, FONT_SIZES, PRESET_COLORS } from "@/types/annotation";
+import { FONT_FAMILIES, PRESET_COLORS } from "@/types/annotation";
 import { Plus, Trash2, Download, Pipette } from "lucide-react";
 import { useRef } from "react";
 
@@ -82,22 +82,28 @@ export function AnnotationSidebar({
 
           {/* Font Size */}
           <div>
-            <label className="text-xs text-muted-foreground">Font Size</label>
-            <select
+            <label className="text-xs text-muted-foreground">Font Size (px)</label>
+            <input
+              type="number"
+              min="1"
+              max="200"
               value={selectedAnnotation.fontSize}
-              onChange={(e) =>
-                onUpdate(selectedAnnotation.id, {
-                  fontSize: Number(e.target.value),
-                })
-              }
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val > 0) {
+                  onUpdate(selectedAnnotation.id, { fontSize: val });
+                }
+              }}
+              onBlur={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (isNaN(val) || val < 1) {
+                  onUpdate(selectedAnnotation.id, { fontSize: 14 });
+                } else if (val > 200) {
+                  onUpdate(selectedAnnotation.id, { fontSize: 200 });
+                }
+              }}
               className="w-full mt-1 h-8 rounded-md border bg-background px-2 text-sm"
-            >
-              {FONT_SIZES.map((size) => (
-                <option key={size} value={size}>
-                  {size}pt
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* Font Weight */}
