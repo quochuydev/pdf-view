@@ -438,6 +438,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
                           onSelect={handleSelectAnnotation}
                           isPickingColor={isPickingColor}
                           onColorPicked={handleColorPicked}
+                          scale={zoom}
                         />
                       )}
                     </div>

@@ -12,6 +12,7 @@ interface TextBoxProps {
   onDelete: () => void;
   containerWidth: number;
   containerHeight: number;
+  scale: number;
 }
 
 export function TextBox({
@@ -22,6 +23,7 @@ export function TextBox({
   onDelete,
   containerWidth,
   containerHeight,
+  scale,
 }: TextBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -178,7 +180,7 @@ export function TextBox({
         left: pixelX,
         top: pixelY,
         width: pixelWidth,
-        minHeight: 24,
+        minHeight: 24 * scale,
         zIndex: isSelected ? 10 : 1,
       }}
       onMouseDown={handleMouseDown}
@@ -190,13 +192,15 @@ export function TextBox({
           value={annotation.text}
           onChange={handleTextChange}
           onBlur={handleBlur}
-          className="w-full min-h-[24px] border border-primary resize-none outline-none p-1"
+          className="w-full border border-primary resize-none outline-none"
           style={{
             fontFamily: annotation.fontFamily,
-            fontSize: annotation.fontSize,
+            fontSize: annotation.fontSize * scale,
             fontWeight: annotation.fontWeight,
             backgroundColor: annotation.backgroundColor === "transparent" ? "rgba(255,255,255,0.9)" : annotation.backgroundColor,
             color: annotation.textColor,
+            minHeight: 24 * scale,
+            padding: 4 * scale,
           }}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
@@ -204,15 +208,17 @@ export function TextBox({
       ) : (
         <div
           className={cn(
-            "w-full min-h-[24px] p-1 whitespace-pre-wrap break-words",
+            "w-full whitespace-pre-wrap break-words",
             !annotation.text && annotation.backgroundColor === "transparent" && "border border-dashed border-gray-400"
           )}
           style={{
             fontFamily: annotation.fontFamily,
-            fontSize: annotation.fontSize,
+            fontSize: annotation.fontSize * scale,
             fontWeight: annotation.fontWeight,
             backgroundColor: annotation.backgroundColor,
             color: annotation.textColor,
+            minHeight: 24 * scale,
+            padding: 4 * scale,
           }}
         >
           {annotation.text || "Double-click to edit"}
