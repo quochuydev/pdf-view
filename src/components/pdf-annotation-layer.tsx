@@ -51,8 +51,8 @@ export function PDFAnnotationLayer({
     if (e.target !== containerRef.current) return;
 
     const rect = containerRef.current!.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const x = ((e.clientX - rect.left) / dimensions.width) * 100;
+    const y = ((e.clientY - rect.top) / dimensions.height) * 100;
 
     onAdd(pageNumber, x, y);
   }

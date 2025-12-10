@@ -49,6 +49,17 @@ export function TextBox({
         return;
       }
 
+      // Ctrl/Cmd + Up/Down for font size
+      if ((e.ctrlKey || e.metaKey) && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        const step = e.shiftKey ? 4 : 1;
+        const newSize = e.key === "ArrowUp"
+          ? Math.min(200, annotation.fontSize + step)
+          : Math.max(6, annotation.fontSize - step);
+        onUpdate({ fontSize: newSize });
+        return;
+      }
+
       // Arrow key movement (like CapCut: normal = slow, shift = fast)
       const moveStep = e.shiftKey ? 1 : 0.1;
       let newX = annotation.x;
@@ -79,7 +90,7 @@ export function TextBox({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSelected, isEditing, onDelete, annotation.x, annotation.y, annotation.width, onUpdate]);
+  }, [isSelected, isEditing, onDelete, annotation.x, annotation.y, annotation.width, annotation.fontSize, onUpdate]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
@@ -160,7 +171,7 @@ export function TextBox({
     <div
       className={cn(
         "absolute cursor-move select-none",
-        isSelected && "ring-2 ring-primary",
+        isSelected && "outline outline-2 outline-dotted outline-primary",
         isDragging && "opacity-80"
       )}
       style={{
