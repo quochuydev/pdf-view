@@ -128,14 +128,14 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => handleSelectHistory(historyUrl)}
-                    className="text-left truncate flex-1 hover:text-primary transition-colors"
+                    className="text-left truncate flex-1 hover:text-primary transition-colors cursor-pointer"
                   >
                     {historyUrl}
                   </button>
                   <button
                     type="button"
                     onClick={() => removeFromHistory(historyUrl)}
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity cursor-pointer"
                   >
                     <X className="h-3 w-3" />
                   </button>

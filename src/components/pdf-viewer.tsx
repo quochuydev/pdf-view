@@ -325,7 +325,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
               <button
                 key={`thumb_${index + 1}`}
                 onClick={() => scrollToPage(index + 1)}
-                className="block w-full mb-2 p-1 rounded hover:bg-muted transition-colors"
+                className="block w-full mb-2 p-1 rounded hover:bg-muted transition-colors cursor-pointer"
               >
                 <Page
                   pageNumber={index + 1}

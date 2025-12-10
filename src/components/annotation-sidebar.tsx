@@ -322,7 +322,7 @@ export function AnnotationSidebar({
                   onClick={() =>
                     onUpdate(selectedAnnotation.id, { backgroundColor: color.value })
                   }
-                  className={`w-6 h-6 rounded border-2 ${
+                  className={`w-6 h-6 rounded border-2 cursor-pointer ${
                     selectedAnnotation.backgroundColor === color.value
                       ? "border-primary"
                       : "border-gray-300"
@@ -342,7 +342,7 @@ export function AnnotationSidebar({
               <button
                 title="Custom color"
                 onClick={() => bgColorInputRef.current?.click()}
-                className="w-6 h-6 rounded border-2 border-gray-300 bg-gradient-to-br from-red-500 via-green-500 to-blue-500"
+                className="w-6 h-6 rounded border-2 border-gray-300 bg-gradient-to-br from-red-500 via-green-500 to-blue-500 cursor-pointer"
               />
               <input
                 ref={bgColorInputRef}
@@ -419,7 +419,7 @@ export function AnnotationSidebar({
                   onClick={() =>
                     onUpdate(selectedAnnotation.id, { textColor: color.value })
                   }
-                  className={`w-6 h-6 rounded border-2 ${
+                  className={`w-6 h-6 rounded border-2 cursor-pointer ${
                     selectedAnnotation.textColor === color.value
                       ? "border-primary"
                       : "border-gray-300"
@@ -431,7 +431,7 @@ export function AnnotationSidebar({
               <button
                 title="Custom color"
                 onClick={() => textColorInputRef.current?.click()}
-                className="w-6 h-6 rounded border-2 border-gray-300 bg-gradient-to-br from-red-500 via-green-500 to-blue-500"
+                className="w-6 h-6 rounded border-2 border-gray-300 bg-gradient-to-br from-red-500 via-green-500 to-blue-500 cursor-pointer"
               />
               <input
                 ref={textColorInputRef}
