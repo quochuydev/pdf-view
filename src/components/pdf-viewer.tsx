@@ -33,7 +33,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
 
   useEffect(() => {
     function handleResize() {

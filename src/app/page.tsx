@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,15 +19,16 @@ const STORAGE_KEY = "pdf-viewer-urls";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
-  const [editingEnabled, setEditingEnabled] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setHistory(JSON.parse(stored));
+  const [history, setHistory] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
     }
-  }, []);
+    return [];
+  });
+  const [editingEnabled, setEditingEnabled] = useState(false);
 
   function saveToHistory(newUrl: string) {
     const updated = [newUrl, ...history.filter((u) => u !== newUrl)].slice(0, 10);
