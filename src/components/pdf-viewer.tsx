@@ -40,6 +40,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [history, setHistory] = useState<Annotation[][]>([]);
   const isUndoing = useRef(false);
+  const [clipboard, setClipboard] = useState<Annotation | null>(null);
 
   // Generate storage key based on URL
   const storageKey = `pdf-annotations-${url}`;
@@ -103,9 +104,12 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     return () => clearTimeout(timer);
   }, [hasUnsavedChanges, editingEnabled]);
 
-  // Undo with Ctrl/Cmd+Z
+  // Keyboard shortcuts: Undo (Ctrl/Cmd+Z), Copy (Ctrl/Cmd+C), Paste (Ctrl/Cmd+V)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (!editingEnabled) return;
+
+      // Undo
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         if (history.length > 1) {
@@ -114,11 +118,35 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
           setHistory(newHistory);
           setAnnotations(newHistory[newHistory.length - 1] || []);
         }
+        return;
+      }
+
+      // Copy selected annotation
+      if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedAnnotationId) {
+        const selected = annotations.find((a) => a.id === selectedAnnotationId);
+        if (selected) {
+          setClipboard({ ...selected });
+        }
+        return;
+      }
+
+      // Paste annotation
+      if ((e.ctrlKey || e.metaKey) && e.key === "v" && clipboard) {
+        e.preventDefault();
+        const newAnnotation: Annotation = {
+          ...clipboard,
+          id: Math.random().toString(36).substring(2, 9),
+          x: Math.min(clipboard.x + 2, 100 - clipboard.width), // Offset slightly
+          y: Math.min(clipboard.y + 2, 95),
+        };
+        setAnnotations((prev) => [...prev, newAnnotation]);
+        setSelectedAnnotationId(newAnnotation.id);
+        return;
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [history]);
+  }, [history, editingEnabled, selectedAnnotationId, annotations, clipboard]);
 
   useEffect(() => {
     function handleResize() {
