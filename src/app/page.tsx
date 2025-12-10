@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 const PDFViewer = dynamic(
   () => import("@/components/pdf-viewer").then((mod) => mod.PDFViewer),
@@ -13,15 +14,45 @@ const PDFViewer = dynamic(
   }
 );
 
+const STORAGE_KEY = "pdf-viewer-urls";
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setHistory(JSON.parse(stored));
+    }
+  }, []);
+
+  function saveToHistory(newUrl: string) {
+    const updated = [newUrl, ...history.filter((u) => u !== newUrl)].slice(0, 10);
+    setHistory(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  }
+
+  function removeFromHistory(urlToRemove: string) {
+    const updated = history.filter((u) => u !== urlToRemove);
+    setHistory(updated);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (url.trim()) {
-      setPdfUrl(url.trim());
+      const trimmed = url.trim();
+      setPdfUrl(trimmed);
+      saveToHistory(trimmed);
     }
+  }
+
+  function handleSelectHistory(selectedUrl: string) {
+    setUrl(selectedUrl);
+    setPdfUrl(selectedUrl);
+    saveToHistory(selectedUrl);
   }
 
   return (
@@ -37,10 +68,39 @@ export default function Home() {
           />
           <Button type="submit">View PDF</Button>
         </form>
+
+        {history.length > 0 && !pdfUrl && (
+          <div className="max-w-2xl mx-auto mt-4">
+            <p className="text-xs text-muted-foreground mb-2">Recent PDFs:</p>
+            <div className="flex flex-col gap-1">
+              {history.map((historyUrl) => (
+                <div
+                  key={historyUrl}
+                  className="flex items-center gap-2 text-sm group"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleSelectHistory(historyUrl)}
+                    className="text-left truncate flex-1 hover:text-primary transition-colors"
+                  >
+                    {historyUrl}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeFromHistory(historyUrl)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {pdfUrl && (
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-hidden">
           <PDFViewer url={pdfUrl} />
         </div>
       )}
