@@ -14,7 +14,6 @@ interface PDFAnnotationLayerProps {
   onSelect: (id: string | null) => void;
   isPickingColor?: boolean;
   onColorPicked?: (color: string) => void;
-  scale: number;
 }
 
 export function PDFAnnotationLayer({
@@ -27,7 +26,6 @@ export function PDFAnnotationLayer({
   onSelect,
   isPickingColor,
   onColorPicked,
-  scale,
 }: PDFAnnotationLayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -102,7 +100,6 @@ export function PDFAnnotationLayer({
           onDelete={() => onDelete(annotation.id)}
           containerWidth={dimensions.width}
           containerHeight={dimensions.height}
-          scale={scale}
         />
       ))}
     </div>

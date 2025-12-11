@@ -12,7 +12,6 @@ interface TextBoxProps {
   onDelete: () => void;
   containerWidth: number;
   containerHeight: number;
-  scale: number;
 }
 
 export function TextBox({
@@ -23,12 +22,17 @@ export function TextBox({
   onDelete,
   containerWidth,
   containerHeight,
-  scale,
 }: TextBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0, annotationX: 0, annotationY: 0, annotationWidth: 0 });
+  const dragStartRef = useRef({
+    x: 0,
+    y: 0,
+    annotationX: 0,
+    annotationY: 0,
+    annotationWidth: 0,
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const pixelX = (annotation.x / 100) * containerWidth;
@@ -52,12 +56,16 @@ export function TextBox({
       }
 
       // Ctrl/Cmd + Up/Down for font size
-      if ((e.ctrlKey || e.metaKey) && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === "ArrowUp" || e.key === "ArrowDown")
+      ) {
         e.preventDefault();
         const step = e.shiftKey ? 4 : 1;
-        const newSize = e.key === "ArrowUp"
-          ? Math.min(200, annotation.fontSize + step)
-          : Math.max(6, annotation.fontSize - step);
+        const newSize =
+          e.key === "ArrowUp"
+            ? Math.min(200, annotation.fontSize + step)
+            : Math.max(6, annotation.fontSize - step);
         onUpdate({ fontSize: newSize });
         return;
       }
@@ -92,24 +100,50 @@ export function TextBox({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSelected, isEditing, onDelete, annotation.x, annotation.y, annotation.width, annotation.fontSize, onUpdate]);
+  }, [
+    isSelected,
+    isEditing,
+    onDelete,
+    annotation.x,
+    annotation.y,
+    annotation.width,
+    annotation.fontSize,
+    onUpdate,
+  ]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isDragging) {
-      const deltaX = e.clientX - dragStartRef.current.x;
-      const deltaY = e.clientY - dragStartRef.current.y;
-      const newX = dragStartRef.current.annotationX + (deltaX / containerWidth) * 100;
-      const newY = dragStartRef.current.annotationY + (deltaY / containerHeight) * 100;
-      onUpdate({
-        x: Math.max(0, Math.min(100 - annotation.width, newX)),
-        y: Math.max(0, Math.min(95, newY)),
-      });
-    } else if (isResizing) {
-      const deltaX = e.clientX - dragStartRef.current.x;
-      const newWidth = dragStartRef.current.annotationWidth + (deltaX / containerWidth) * 100;
-      onUpdate({ width: Math.max(10, Math.min(100 - annotation.x, newWidth)) });
-    }
-  }, [isDragging, isResizing, containerWidth, containerHeight, annotation.width, annotation.x, onUpdate]);
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isDragging) {
+        const deltaX = e.clientX - dragStartRef.current.x;
+        const deltaY = e.clientY - dragStartRef.current.y;
+        const newX =
+          dragStartRef.current.annotationX + (deltaX / containerWidth) * 100;
+        const newY =
+          dragStartRef.current.annotationY + (deltaY / containerHeight) * 100;
+        onUpdate({
+          x: Math.max(0, Math.min(100 - annotation.width, newX)),
+          y: Math.max(0, Math.min(95, newY)),
+        });
+      } else if (isResizing) {
+        const deltaX = e.clientX - dragStartRef.current.x;
+        const newWidth =
+          dragStartRef.current.annotationWidth +
+          (deltaX / containerWidth) * 100;
+        onUpdate({
+          width: Math.max(10, Math.min(100 - annotation.x, newWidth)),
+        });
+      }
+    },
+    [
+      isDragging,
+      isResizing,
+      containerWidth,
+      containerHeight,
+      annotation.width,
+      annotation.x,
+      onUpdate,
+    ]
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -180,7 +214,6 @@ export function TextBox({
         left: pixelX,
         top: pixelY,
         width: pixelWidth,
-        minHeight: 24 * scale,
         zIndex: isSelected ? 10 : 1,
       }}
       onMouseDown={handleMouseDown}
@@ -192,15 +225,19 @@ export function TextBox({
           value={annotation.text}
           onChange={handleTextChange}
           onBlur={handleBlur}
-          className="w-full border border-primary resize-none outline-none"
+          className="w-full resize-none outline-none border-none"
           style={{
             fontFamily: annotation.fontFamily,
-            fontSize: annotation.fontSize * scale,
+            fontSize: annotation.fontSize,
             fontWeight: annotation.fontWeight,
-            backgroundColor: annotation.backgroundColor === "transparent" ? "rgba(255,255,255,0.9)" : annotation.backgroundColor,
+            backgroundColor:
+              annotation.backgroundColor === "transparent"
+                ? "rgba(255,255,255,0.9)"
+                : annotation.backgroundColor,
             color: annotation.textColor,
-            minHeight: 24 * scale,
-            padding: 4 * scale,
+            padding: 0,
+            margin: 0,
+            lineHeight: "normal",
           }}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
@@ -209,16 +246,19 @@ export function TextBox({
         <div
           className={cn(
             "w-full whitespace-pre-wrap break-words",
-            !annotation.text && annotation.backgroundColor === "transparent" && "border border-dashed border-gray-400"
+            !annotation.text &&
+              annotation.backgroundColor === "transparent" &&
+              "border border-dashed border-gray-400"
           )}
           style={{
             fontFamily: annotation.fontFamily,
-            fontSize: annotation.fontSize * scale,
+            fontSize: annotation.fontSize,
             fontWeight: annotation.fontWeight,
             backgroundColor: annotation.backgroundColor,
             color: annotation.textColor,
-            minHeight: 24 * scale,
-            padding: 4 * scale,
+            padding: 0,
+            margin: 0,
+            lineHeight: "normal",
           }}
         >
           {annotation.text || "Double-click to edit"}

@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { Button } from "@/components/ui/button";
-import { Minus, Plus } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { jsPDF } from "jspdf";
@@ -19,20 +17,20 @@ interface PDFViewerProps {
   editingEnabled?: boolean;
 }
 
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const SIDEBAR_WIDTH = 160;
 const THUMBNAIL_WIDTH = 120;
 
 export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(0.75);
   const [containerWidth, setContainerWidth] = useState<number>(800);
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<
+    string | null
+  >(null);
   const [currentPage] = useState(1);
   const [isPickingColor, setIsPickingColor] = useState(false);
   const [savedAnnotations, setSavedAnnotations] = useState<string>("");
@@ -169,20 +167,6 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     setNumPages(null);
   }
 
-  function zoomIn() {
-    const currentIndex = ZOOM_LEVELS.indexOf(zoom);
-    if (currentIndex < ZOOM_LEVELS.length - 1) {
-      setZoom(ZOOM_LEVELS[currentIndex + 1]);
-    }
-  }
-
-  function zoomOut() {
-    const currentIndex = ZOOM_LEVELS.indexOf(zoom);
-    if (currentIndex > 0) {
-      setZoom(ZOOM_LEVELS[currentIndex - 1]);
-    }
-  }
-
   function scrollToPage(pageNumber: number) {
     const pageElement = pageRefs.current.get(pageNumber);
     if (pageElement) {
@@ -230,95 +214,56 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   async function handleDownload() {
     if (!numPages || !containerRef.current) return;
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "px",
-    });
-
-    const pageElements = containerRef.current.querySelectorAll(".react-pdf__Page");
+    const pdf = new jsPDF({ orientation: "portrait", unit: "px" });
+    const pageElements =
+      containerRef.current.querySelectorAll(".react-pdf__Page");
 
     for (let i = 0; i < pageElements.length; i++) {
       const pageElement = pageElements[i] as HTMLElement;
-      const canvas = pageElement.querySelector("canvas");
+      const originalCanvas = pageElement.querySelector("canvas");
+      if (!originalCanvas) continue;
 
-      if (!canvas) continue;
-
-      // Create a new canvas to draw both PDF and annotations
-      const combinedCanvas = document.createElement("canvas");
-      const ctx = combinedCanvas.getContext("2d");
+      // Create new canvas with annotations drawn on it
+      const canvas = document.createElement("canvas");
+      canvas.width = originalCanvas.width;
+      canvas.height = originalCanvas.height;
+      const ctx = canvas.getContext("2d");
       if (!ctx) continue;
 
-      combinedCanvas.width = canvas.width;
-      combinedCanvas.height = canvas.height;
+      // Copy PDF page
+      ctx.drawImage(originalCanvas, 0, 0);
 
-      // Draw the PDF page
-      ctx.drawImage(canvas, 0, 0);
-
-      // Draw annotations for this page
+      // Draw annotations
       const pageAnnotations = annotations.filter((a) => a.pageNumber === i + 1);
-      const scaleX = canvas.width / pageElement.clientWidth;
+      const containerEl = pageElement.parentElement;
 
-      for (const annotation of pageAnnotations) {
-        const x = (annotation.x / 100) * canvas.width;
-        const y = (annotation.y / 100) * canvas.height;
-        const width = (annotation.width / 100) * canvas.width;
-        const padding = 4 * scaleX;
+      if (containerEl) {
+        const scale = originalCanvas.width / containerEl.clientWidth;
+        pageAnnotations.forEach((ann) => {
+          const x = (ann.x / 100) * originalCanvas.width;
+          const y = (ann.y / 100) * originalCanvas.height;
+          const width = (ann.width / 100) * originalCanvas.width;
+          const fontSize = ann.fontSize * scale;
 
-        // Draw background
-        if (annotation.backgroundColor && annotation.backgroundColor !== "transparent") {
-          ctx.fillStyle = annotation.backgroundColor;
-          // Calculate text height for background
-          ctx.font = `${annotation.fontWeight} ${annotation.fontSize * scaleX}px ${annotation.fontFamily}`;
-          const words = annotation.text.split(" ");
-          let line = "";
-          let lines = 0;
-          for (const word of words) {
-            const testLine = line + word + " ";
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > width - padding * 2 && line !== "") {
-              lines++;
-              line = word + " ";
-            } else {
-              line = testLine;
-            }
+          // Background
+          if (ann.backgroundColor && ann.backgroundColor !== "transparent") {
+            ctx.fillStyle = ann.backgroundColor;
+            ctx.fillRect(x, y, width, fontSize);
           }
-          if (line) lines++;
-          const textHeight = lines * annotation.fontSize * scaleX * 1.2;
-          ctx.fillRect(x, y, width, textHeight + padding * 2);
-        }
 
-        ctx.font = `${annotation.fontWeight} ${annotation.fontSize * scaleX}px ${annotation.fontFamily}`;
-        ctx.fillStyle = annotation.textColor || "black";
-        ctx.textBaseline = "top";
-
-        // Simple text wrapping
-        const words = annotation.text.split(" ");
-        let line = "";
-        let lineY = y + padding;
-        const lineHeight = annotation.fontSize * scaleX * 1.2;
-
-        for (const word of words) {
-          const testLine = line + word + " ";
-          const metrics = ctx.measureText(testLine);
-          if (metrics.width > width - padding * 2 && line !== "") {
-            ctx.fillText(line, x + padding, lineY);
-            line = word + " ";
-            lineY += lineHeight;
-          } else {
-            line = testLine;
-          }
-        }
-        ctx.fillText(line, x + padding, lineY);
+          // Text
+          ctx.fillStyle = ann.textColor || "black";
+          ctx.font = `${ann.fontWeight} ${fontSize}px ${ann.fontFamily}`;
+          ctx.textBaseline = "top";
+          ctx.fillText(ann.text, x, y + 4);
+        });
       }
 
-      // Add page to PDF
-      const imgData = combinedCanvas.toDataURL("image/png");
+      // Add to PDF
+      const imgData = canvas.toDataURL("image/png");
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (combinedCanvas.height / combinedCanvas.width) * pdfWidth;
-
-      if (i > 0) {
-        pdf.addPage();
-      }
+      const pdfHeight = (canvas.height / canvas.width) * pdfWidth;
+      if (i > 0) pdf.addPage();
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
     }
 
@@ -336,9 +281,10 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
     setIsPickingColor(false);
   }
 
-  const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) || null;
+  const selectedAnnotation =
+    annotations.find((a) => a.id === selectedAnnotationId) || null;
 
-  const pageWidth = containerWidth * zoom;
+  const pageWidth = containerWidth;
 
   return (
     <div className="flex h-full">
@@ -372,29 +318,6 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Zoom controls */}
-        <div className="flex items-center justify-center gap-1 p-1.5 border-b bg-background">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0"
-            onClick={zoomOut}
-            disabled={zoom === ZOOM_LEVELS[0]}
-          >
-            <Minus className="h-3 w-3" />
-          </Button>
-          <span className="text-xs w-12 text-center">{Math.round(zoom * 100)}%</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0"
-            onClick={zoomIn}
-            disabled={zoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-
         {/* PDF pages */}
         <div ref={containerRef} className="flex-1 overflow-auto p-4">
           <div className="flex flex-col items-center gap-4">
@@ -438,7 +361,6 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
                           onSelect={handleSelectAnnotation}
                           isPickingColor={isPickingColor}
                           onColorPicked={handleColorPicked}
-                          scale={zoom}
                         />
                       )}
                     </div>
