@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { X, Edit, Upload } from "lucide-react";
@@ -33,6 +34,18 @@ export default function Home() {
   });
   const [editingEnabled, setEditingEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const urlParam = searchParams.get("url");
+    if (urlParam && urlParam.trim()) {
+      const trimmedUrl = urlParam.trim();
+      setUrl(trimmedUrl);
+      setPdfUrl(trimmedUrl);
+      setPdfFileName(null);
+      saveToHistory(trimmedUrl);
+    }
+  }, []);
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
