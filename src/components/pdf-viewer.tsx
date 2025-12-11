@@ -255,7 +255,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
           ctx.fillStyle = ann.textColor || "black";
           ctx.font = `${ann.fontWeight} ${fontSize}px ${ann.fontFamily}`;
           ctx.textBaseline = "top";
-          ctx.fillText(ann.text, x, y + 4);
+          ctx.fillText(ann.text, x, y + 8);
         });
       }
 
