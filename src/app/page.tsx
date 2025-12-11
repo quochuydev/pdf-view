@@ -10,7 +10,9 @@ const PDFViewer = dynamic(
   () => import("@/components/pdf-viewer").then((mod) => mod.PDFViewer),
   {
     ssr: false,
-    loading: () => <div className="text-center text-muted-foreground">Loading viewer...</div>,
+    loading: () => (
+      <div className="text-center text-muted-foreground">Loading viewer...</div>
+    ),
   }
 );
 
@@ -45,7 +47,10 @@ export default function Home() {
   }
 
   function saveToHistory(newUrl: string) {
-    const updated = [newUrl, ...history.filter((u) => u !== newUrl)].slice(0, 10);
+    const updated = [newUrl, ...history.filter((u) => u !== newUrl)].slice(
+      0,
+      10
+    );
     setHistory(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
@@ -105,8 +110,7 @@ export default function Home() {
               variant={editingEnabled ? "default" : "outline"}
               onClick={() => setEditingEnabled(!editingEnabled)}
             >
-              <Edit className="h-4 w-4 mr-2" />
-              {editingEnabled ? "Editing" : "Edit"}
+              <Edit className="h-4 w-4" />
             </Button>
           )}
         </form>
