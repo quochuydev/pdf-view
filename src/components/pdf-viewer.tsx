@@ -7,6 +7,7 @@ import "react-pdf/dist/Page/TextLayer.css";
 import { jsPDF } from "jspdf";
 import { PDFAnnotationLayer } from "./pdf-annotation-layer";
 import { AnnotationSidebar } from "./annotation-sidebar";
+import { ZoomToolbar } from "./zoom-toolbar";
 import type { Annotation } from "@/types/annotation";
 import { DEFAULT_ANNOTATION } from "@/types/annotation";
 
@@ -15,15 +16,17 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PDFViewerProps {
   url: string;
   editingEnabled?: boolean;
+  initialZoom?: number;
 }
 
 const SIDEBAR_WIDTH = 160;
 const THUMBNAIL_WIDTH = 120;
 
-export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
+export function PDFViewer({ url, editingEnabled = false, initialZoom = 1.0 }: PDFViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(800);
+  const [zoom, setZoom] = useState<number>(initialZoom);
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
@@ -284,7 +287,7 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
   const selectedAnnotation =
     annotations.find((a) => a.id === selectedAnnotationId) || null;
 
-  const pageWidth = containerWidth;
+  const pageWidth = containerWidth * zoom;
 
   return (
     <div className="flex h-full">
@@ -318,6 +321,9 @@ export function PDFViewer({ url, editingEnabled = false }: PDFViewerProps) {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Zoom toolbar */}
+        <ZoomToolbar zoom={zoom} onZoomChange={setZoom} />
+
         {/* PDF pages */}
         <div ref={containerRef} className="flex-1 overflow-auto p-4">
           <div className="flex flex-col items-center gap-4">

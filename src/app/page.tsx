@@ -23,6 +23,7 @@ function HomeContent() {
   const [url, setUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [initialZoom, setInitialZoom] = useState<number>(1.0);
   const [history, setHistory] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -38,12 +39,21 @@ function HomeContent() {
 
   useEffect(() => {
     const urlParam = searchParams.get("url");
+    const zoomParam = searchParams.get("zoom");
+
     if (urlParam && urlParam.trim()) {
       const trimmedUrl = urlParam.trim();
       setUrl(trimmedUrl);
       setPdfUrl(trimmedUrl);
       setPdfFileName(null);
       saveToHistory(trimmedUrl);
+    }
+
+    if (zoomParam) {
+      const zoomValue = parseFloat(zoomParam);
+      if (!isNaN(zoomValue) && zoomValue >= 0.5 && zoomValue <= 2.0) {
+        setInitialZoom(zoomValue);
+      }
     }
   }, []);
 
@@ -165,7 +175,7 @@ function HomeContent() {
 
       {pdfUrl && (
         <div className="flex-1 overflow-hidden">
-          <PDFViewer url={pdfUrl} editingEnabled={editingEnabled} />
+          <PDFViewer url={pdfUrl} editingEnabled={editingEnabled} initialZoom={initialZoom} />
         </div>
       )}
     </div>
