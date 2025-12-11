@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ const PDFViewer = dynamic(
 
 const STORAGE_KEY = "pdf-viewer-urls";
 
-export default function Home() {
+function HomeContent() {
   const [url, setUrl] = useState("");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string | null>(null);
@@ -169,5 +169,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="text-center p-4 text-muted-foreground">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
