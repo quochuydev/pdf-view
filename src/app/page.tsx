@@ -132,6 +132,7 @@ function HomeContent() {
               type="button"
               variant={editingEnabled ? "default" : "outline"}
               onClick={() => setEditingEnabled(!editingEnabled)}
+              className="hidden"
             >
               <Edit className="h-4 w-4" />
             </Button>
